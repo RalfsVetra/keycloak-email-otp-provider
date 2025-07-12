@@ -51,6 +51,7 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 
 public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFactory {
+  public static final String PROVIDER_ID = "email-otp-verify";
   private static final Logger logger = Logger.getLogger(EmailOtpVerify.class);
   
   private static final String OTP_FORM = "email-otp-form.ftl";
@@ -60,7 +61,6 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
   private static final String ACTION_FIELD = "action";
   private static final String ACTION_FIELD_RESEND = "resend";
   
-  public static final String PROVIDER_ID = "EMAIL_OTP_VERIFY";
   private static final String OTP_KEY = "EMAIL_OTP";
   private static final String OTP_TIMESTAMP_KEY = "EMAIL_OTP_TIMESTAMP";
   private static final String OTP_ATTEMPTS_KEY = "EMAIL_OTP_ATTEMPTS";
