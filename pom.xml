@@ -6,7 +6,7 @@
 
   <groupId>com.scandicom</groupId>
   <artifactId>keycloak-email-otp-provider</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <name>keycloak-email-otp-provider</name>
   
   <properties>
