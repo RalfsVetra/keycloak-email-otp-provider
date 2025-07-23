@@ -17,12 +17,12 @@
 
 package com.scandicom;
 
+import static com.scandicom.OtpConstants.*;
 import java.security.MessageDigest;
 import java.util.Map;
 import java.util.HashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.Arrays;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
@@ -52,30 +52,7 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 
 public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFactory {
-  public static final String PROVIDER_ID = "email-otp-verify";
   private static final Logger logger = Logger.getLogger(EmailOtpVerify.class);
-  
-  private static final String OTP_FORM = "email-otp-form.ftl";
-  private static final String OTP_EMAIL = "email-otp-verify.ftl";
-
-  private static final String OTP_FIELD = "otp";
-  private static final String ACTION_FIELD = "action";
-  private static final String ACTION_FIELD_RESEND = "resend";
-
-  private static final String USER_ATTRIBUTE = "terms_and_conditions";
-  private static final String MARKETING_CONSENT = "marketing_consent";
-  private static final String MARKETING_CONSENT_IP = "marketing_consent_ip";
-  private static final String OTP_KEY = "EMAIL_OTP";
-  private static final String OTP_TIMESTAMP_KEY = "EMAIL_OTP_TIMESTAMP";
-  private static final String OTP_ATTEMPTS_KEY = "EMAIL_OTP_ATTEMPTS";
-  private static final String OTP_EMAIL_RESEND_TIMESTAMP_KEY = "OTP_EMAIL_RESEND_TIMESTAMP";
-  
-  private static final String NUMBERS = "0123456789";
-  private static final int MAX_OTP_ATTEMPTS = 6;
-  private static final int OTP_EXPIRY_SECONDS = 1800; // 30 minutes
-  private static final int OTP_EMAIL_RESEND_TIMEOUT_SECONDS = 60; // 1 minute
-  private static final long OTP_EXPIRY_MINUTES = TimeUnit.SECONDS.toMinutes(OTP_EXPIRY_SECONDS);
-  private static final int OTP_LENGTH = 6;
 
   @Override
   public void evaluateTriggers(RequiredActionContext context) {
@@ -128,8 +105,7 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
       challenge = sendEmailOtp(context, otp, authSession, event);
     } else {
       challenge = loginFormsProvider
-          .setAttribute("expirationInMinutes", OTP_EXPIRY_MINUTES)
-          .setAttribute("userEmail", context.getUser().getEmail())
+          .setAttribute(ATTR_USER_EMAIL, context.getUser().getEmail())
           .createForm(OTP_FORM);
     }
 
@@ -145,9 +121,8 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
   public void processAction(RequiredActionContext context) {
     AuthenticationSessionModel authSession = context.getAuthenticationSession();
     MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-    String action = formData.getFirst(ACTION_FIELD);
     
-    if (ACTION_FIELD_RESEND.equals(action)) {
+    if (formData.containsKey(RESEND_FIELD)) {
       handleResendRequest(context, authSession);
       return;
     }
@@ -170,9 +145,8 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
         long remainingSeconds = OTP_EMAIL_RESEND_TIMEOUT_SECONDS - elapsedSeconds;
     
         Response challenge = context.form()
-          .setAttribute("expirationInMinutes", OTP_EXPIRY_MINUTES)
-          .setAttribute("userEmail", context.getUser().getEmail())
-          .setError("otpEmailResendTimeout", remainingSeconds)
+          .setAttribute(ATTR_USER_EMAIL, context.getUser().getEmail())
+          .setError(MSG_OTP_EMAIL_RESEND_TIMEOUT, remainingSeconds)
           .createForm(OTP_FORM);
     
         context.challenge(challenge);
@@ -199,9 +173,8 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
     if (attempts >= MAX_OTP_ATTEMPTS) {
       removeAuthenticationSession(context, authSession);
       Response response = context.form()
-          .setAttribute("expirationInMinutes", OTP_EXPIRY_MINUTES)
-          .setAttribute("userEmail", context.getUser().getEmail())
-          .setError("otpMaxAttemptsExceeded")
+          .setAttribute(ATTR_USER_EMAIL, context.getUser().getEmail())
+          .setError(MSG_OTP_MAX_ATTEMPTS)
           .createErrorPage(Response.Status.TOO_MANY_REQUESTS);
     
       context.challenge(response);
@@ -211,7 +184,7 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
     String submittedOtp = formData.getFirst(OTP_FIELD);
     
     if (Validation.isBlank(submittedOtp)) {
-      showError(context, "otpRequired");
+      showError(context, MSG_OTP_REQUIRED);
       return;
     }
 
@@ -221,9 +194,8 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
     if (Validation.isBlank(storedOtp) || Validation.isBlank(OtpTimestampStr)) {
       removeAuthenticationSession(context, authSession);
       Response response = context.form()
-          .setAttribute("expirationInMinutes", OTP_EXPIRY_MINUTES)
-          .setAttribute("userEmail", context.getUser().getEmail())
-          .setError("otpProcessingError")
+          .setAttribute(ATTR_USER_EMAIL, context.getUser().getEmail())
+          .setError(MSG_OTP_PROCESSING_ERROR)
           .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR);
       
       context.challenge(response);
@@ -234,7 +206,7 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
     long elapsedSeconds = currentTime - timestamp;
 
     if (elapsedSeconds >= OTP_EXPIRY_SECONDS) {
-      showInfo(context, "otpRequestNewCode");
+      showInfo(context, MSG_OTP_EXPIRED);
       return;
     }
 
@@ -261,7 +233,7 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
       context.success();
     } else {
       authSession.setAuthNote(OTP_ATTEMPTS_KEY, String.valueOf(attempts + 1));
-      showError(context, "otpIncorrect");
+      showError(context, MSG_OTP_INCORRECT);
     }
   }
 
@@ -284,7 +256,7 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
 
   @Override
   public String getDisplayText() {
-    return "Verify Email using OTP";
+    return DISPLAY_TEXT;
   }
 
   @Override
@@ -303,27 +275,24 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
 
     try {
       Map<String, Object> attributes = new HashMap<>();
-      attributes.put("otp", otp);
-      attributes.put("expirationInMinutes", OTP_EXPIRY_MINUTES);
+      attributes.put(EMAIL_OTP_PARAM, otp);
       
       session
           .getProvider(EmailTemplateProvider.class)
           .setAuthenticationSession(authSession)
           .setRealm(realm)
           .setUser(user)
-          .send("otpEmailSubject", OTP_EMAIL, attributes);
+          .send(EMAIL_SUBJECT_KEY, OTP_EMAIL, attributes);
       event.success();
 
       if (authSession.getAuthNote(OTP_EMAIL_RESEND_TIMESTAMP_KEY) != null) {
         return context.form()
-            .setAttribute("expirationInMinutes", OTP_EXPIRY_MINUTES)
-            .setAttribute("userEmail", context.getUser().getEmail())
-            .setSuccess("otpEmailSent")
+            .setAttribute(ATTR_USER_EMAIL, context.getUser().getEmail())
+            .setSuccess(MSG_OTP_EMAIL_SENT)
             .createForm(OTP_FORM);
       } else {
         return context.form()
-            .setAttribute("expirationInMinutes", OTP_EXPIRY_MINUTES)
-            .setAttribute("userEmail", context.getUser().getEmail())
+            .setAttribute(ATTR_USER_EMAIL, context.getUser().getEmail())
             .createForm(OTP_FORM);
       }
     } catch (EmailException e) {
@@ -334,8 +303,7 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
       logger.error("Failed to send verification email", e);
       context.failure(Messages.EMAIL_SENT_ERROR);
       return context.form()
-          .setAttribute("expirationInMinutes", OTP_EXPIRY_MINUTES)
-          .setAttribute("userEmail", context.getUser().getEmail())
+          .setAttribute(ATTR_USER_EMAIL, context.getUser().getEmail())
           .setError(Messages.EMAIL_SENT_ERROR)
           .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR);
     }
@@ -364,8 +332,7 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
 
   private void showError(RequiredActionContext context, String messageKey) {
     Response challenge = context.form()
-        .setAttribute("userEmail", context.getUser().getEmail())
-        .setAttribute("expirationInMinutes", OTP_EXPIRY_MINUTES)
+        .setAttribute(ATTR_USER_EMAIL, context.getUser().getEmail())
         .setError(messageKey)
         .createForm(OTP_FORM);
     context.challenge(challenge);
@@ -373,8 +340,7 @@ public class EmailOtpVerify implements RequiredActionProvider, RequiredActionFac
 
   private void showInfo(RequiredActionContext context, String messageKey) {
     Response challenge = context.form()
-        .setAttribute("userEmail", context.getUser().getEmail())
-        .setAttribute("expirationInMinutes", OTP_EXPIRY_MINUTES)
+        .setAttribute(ATTR_USER_EMAIL, context.getUser().getEmail())
         .setInfo(messageKey)
         .createForm(OTP_FORM);
     context.challenge(challenge);
