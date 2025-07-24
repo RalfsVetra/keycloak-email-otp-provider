@@ -60,6 +60,7 @@ jobs:
           <body>
             <h1>Keycloak Email OTP Provider</h1>
             <a href="https://github.com/RalfsVetra/keycloak-email-otp-provider/tree/main">Repository</a>
+            <br>
             <a href="https://github.com/RalfsVetra">Author</a>
           </body>
           </html>
