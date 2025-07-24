@@ -37,14 +37,14 @@ jobs:
       - name: Prepare site content
         run: |
           mkdir -p _site
-          cp README.md _site/
+          # Copy README as index.md so GitHub Pages serves it as homepage
+          cp README.md _site/index.md
           # Create Google verification file
           echo 'google-site-verification: 8mgfGaygq4UR_VDn7O_O6MhFYS9CaBpkEG1ONsKoG3M' > _site/google8mgfGaygq4UR_VDn7O_O6MhFYS9CaBpkEG1ONsKoG3M.html
         
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload only the prepared site content
           path: '_site'
           
       - name: Deploy to GitHub Pages
