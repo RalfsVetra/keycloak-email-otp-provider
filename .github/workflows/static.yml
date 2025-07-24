@@ -37,14 +37,58 @@ jobs:
       - name: Prepare site content
         run: |
           mkdir -p _site
-          # Copy README as index.md so GitHub Pages serves it as homepage
-          cp README.md _site/index.md
+          
+          # Create index.html from README.md
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <meta name="google-site-verification" content="8mgfGaygq4UR_VDn7O_O6MhFYS9CaBpkEG1ONsKoG3M" />
+              <title>Keycloak Email OTP Provider</title>
+              <style>
+                  body { 
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                      max-width: 800px; 
+                      margin: 0 auto; 
+                      padding: 20px; 
+                      line-height: 1.6;
+                  }
+                  pre { 
+                      background: #f6f8fa; 
+                      padding: 16px; 
+                      border-radius: 6px; 
+                      overflow-x: auto; 
+                  }
+                  code { 
+                      background: #f6f8fa; 
+                      padding: 2px 4px; 
+                      border-radius: 3px; 
+                  }
+                  h1, h2, h3 { color: #24292e; }
+              </style>
+          </head>
+          <body>
+          EOF
+          
+          # Convert README.md to HTML and append
+          # Install a markdown processor
+          npm install -g marked
+          marked README.md >> _site/index.html
+          
+          echo '</body></html>' >> _site/index.html
+          
           # Create Google verification file
           echo 'google-site-verification: 8mgfGaygq4UR_VDn7O_O6MhFYS9CaBpkEG1ONsKoG3M' > _site/google8mgfGaygq4UR_VDn7O_O6MhFYS9CaBpkEG1ONsKoG3M.html
+          
+          # Add .nojekyll to bypass Jekyll processing
+          touch _site/.nojekyll
         
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          # Upload only the prepared site content
           path: '_site'
           
       - name: Deploy to GitHub Pages
