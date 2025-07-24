@@ -38,7 +38,7 @@ jobs:
         run: |
           mkdir -p _site
           
-          # Create index.html from README.md
+          # Create index.html from README.md with basic conversion
           cat > _site/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
@@ -70,14 +70,17 @@ jobs:
               </style>
           </head>
           <body>
+          <pre>
           EOF
           
-          # Convert README.md to HTML and append
-          # Install a markdown processor
-          npm install -g marked
-          marked README.md >> _site/index.html
+          # Simply wrap README content in pre tags to preserve formatting
+          cat README.md >> _site/index.html
           
-          echo '</body></html>' >> _site/index.html
+          cat >> _site/index.html << 'EOF'
+          </pre>
+          </body>
+          </html>
+          EOF
           
           # Create Google verification file
           echo 'google-site-verification: 8mgfGaygq4UR_VDn7O_O6MhFYS9CaBpkEG1ONsKoG3M' > _site/google8mgfGaygq4UR_VDn7O_O6MhFYS9CaBpkEG1ONsKoG3M.html
