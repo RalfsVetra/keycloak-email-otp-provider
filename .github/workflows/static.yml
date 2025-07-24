@@ -55,29 +55,12 @@ jobs:
                       padding: 20px; 
                       line-height: 1.6;
                   }
-                  pre { 
-                      background: #f6f8fa; 
-                      padding: 16px; 
-                      border-radius: 6px; 
-                      overflow-x: auto; 
-                  }
-                  code { 
-                      background: #f6f8fa; 
-                      padding: 2px 4px; 
-                      border-radius: 3px; 
-                  }
-                  h1, h2, h3 { color: #24292e; }
               </style>
           </head>
           <body>
-          <pre>
-          EOF
-          
-          # Simply wrap README content in pre tags to preserve formatting
-          cat README.md >> _site/index.html
-          
-          cat >> _site/index.html << 'EOF'
-          </pre>
+            <h1>Keycloak Email OTP Provider</h1>
+            <a href="https://github.com/RalfsVetra/keycloak-email-otp-provider/tree/main">Repository</a>
+            <a href="https://github.com/RalfsVetra">Author</a>
           </body>
           </html>
           EOF
